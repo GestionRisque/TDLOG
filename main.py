@@ -15,6 +15,9 @@ import logging
 
 LOG_FILENAME = 'debug.log'
 lognum = 1
+
+os.remove('iterate.dat')
+
 while os.path.isfile(LOG_FILENAME):
     LOG_FILENAME = 'debug'+ '(' +str(lognum)+ ').log'
     lognum += 1
@@ -126,7 +129,16 @@ def preProcessing():
         logging.debug('{}           data imported successfully from Yahoo!'.format(datetime.datetime.now()))
 
 def simpleModelling():
-    SimpleModelling.main()
+
+    logging.debug('{}           Preparing for the simple modelling...'.format(datetime.datetime.now()))
+
+    try:
+        SimpleModelling.main()
+    except ValueError:
+        logging.debug('{}           Calculation is wrong somewhere...'.format(datetime.datetime.now()))
+        return
+    logging.debug('{}           Modelling is successful!'.format(datetime.datetime.now()))
+
 
 
 sys.exit(app.exec_())

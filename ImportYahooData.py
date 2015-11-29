@@ -18,4 +18,4 @@ def main():
             return 0
         GlobalValue.yahooData.append(price)
 
-    print(GlobalValue.yahooData[0])
+    #print(GlobalValue.yahooData[0])
