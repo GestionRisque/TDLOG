@@ -8,3 +8,5 @@ def init():
     global ptf
 
     global yahooData
+
+    global modelParams

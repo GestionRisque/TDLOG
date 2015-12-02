@@ -5,11 +5,23 @@ import arch
 import math
 import statsmodels.api as sm
 
-def main():
-    for actif in GlobalValue.yahooData:
-        priceMvt = decode(actif)
-        ARMA(priceMvt)
+def main(i):
+    GlobalValue.init()
+    GlobalValue.modelParams = []
+    if i == 1:
+        for actif in GlobalValue.yahooData:
+            print(actif)
+            arma = ARMA(actif)
+            garch = GARCH(actif)
+            GlobalValue.modelParams.append({'arma':arma,'garch':garch})
+    else:
+        for actif in GlobalValue.yahooData:
+            priceMvt = decode(actif)
+            arma = ARMA(priceMvt)
+            garch = GARCH(priceMvt)
+            GlobalValue.modelParams.append({'arma':arma,'garch':garch})
         #print(priceMvt)
+
 
 
 
@@ -20,27 +32,32 @@ def decode(ac):
         prices.append(float(item['Adj_Close']))
     return prices
 
-def ARMA(share):
+def returns(share):
 
     r = []
     n = len(share)
     for i in range(1,n-1):
         r.append(math.log(share[i]/share[i-1]))
-
-    arma_mod30 = sm.tsa.ARMA(r, (3,0)).fit()
-    print(arma_mod30.params)
+    return r
 
 
 
-    return
+def ARMA(share):
+
+    r = returns(share)
+    arma_mod30 = sm.tsa.ARMA(r, (3,0))
+    res = arma_mod30.fit()
+    return res.params
 
 def GARCH(share):
 
-    return
+    r = returns(share)
+    am = arch.arch_model(r)
+    res = am.fit(update_freq=5)
+    print(res.summary())
 
-def ARCH(share):
+    return res.params
 
-    return
 
 def SV(share):
 
