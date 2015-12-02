@@ -8,7 +8,7 @@ import sys
 import csv
 import datetime
 import GlobalValue
-from PyQt4.QtGui import *
+from PyQt4 import QtGui
 from Actif import Actif
 import ImportYahooData,SimpleModelling
 import logging
@@ -21,9 +21,7 @@ import logging
 #         self.assertEqual(GlobalValue.ptf[0].nom, 'AAPL')
 
 
-import sys
-from PyQt4 import QtGui
-
+########## MAIN DIALOG FORM: Main UI ##############
 
 class MainDialog(QtGui.QWidget):
 
@@ -69,10 +67,10 @@ class MainDialog(QtGui.QWidget):
 
         if self.btn3.isChecked():
             preProcessing(True)
-            simpleModelling(1)
         else:
             preProcessing(False)
-            simpleModelling(2)
+
+        simpleModelling()
 
     def selectFile(self):
         self.filename = QtGui.QFileDialog.getOpenFileName()
@@ -89,9 +87,9 @@ class MainDialog(QtGui.QWidget):
         self.btn2.setVisible(True)
 
 
-########## from here we begin to import data ##############
+########## FROM HERE WE BEGIN TO IMPORT DATA ##############
 
-
+########## If online, we read only Portfolio Structure ##############
 
 def readFile(filename):
     # stock all actifs infomations in portfolio.
@@ -112,7 +110,7 @@ def readFile(filename):
         sys.exit(app.exec_())
 
 
-
+######## If offline, we have to read the historical data values stocked with the name 'Historical Data.csv' ##########
 
 def readHistData(filename):
     # stock all actifs infomations in portfolio.
@@ -146,12 +144,14 @@ def readHistData(filename):
         sys.exit(app.exec_())
 
 
-########## from here we begin the calculation ##############
+########## FROM HERE WE BEGIN THE CALCULATION / MODELLING ##############
 
+########## Pre-Processing will prepare the data we need ##############
 
 def preProcessing(TF):
 
     if TF:
+        logging.debug('{}           Picking data from local resource...'.format(datetime.datetime.now()))
         readHistData('Historical Data.csv')
 
     else:
@@ -162,12 +162,12 @@ def preProcessing(TF):
         else:
             logging.debug('{}           data imported successfully from Yahoo!'.format(datetime.datetime.now()))
 
-def simpleModelling(i):
+def simpleModelling():
 
     logging.debug('{}           Preparing for the simple modelling...'.format(datetime.datetime.now()))
 
     try:
-        SimpleModelling.main(i)
+        SimpleModelling.main()
     except ValueError:
         logging.debug('{}           Calculation is wrong somewhere...'.format(datetime.datetime.now()))
         return
