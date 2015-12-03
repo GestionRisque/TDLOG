@@ -45,6 +45,8 @@ def GARCH(share):
 
 def SV(share):
 
+    r = returns(share)
+
     return
 
 if __name__ == '__main__':
