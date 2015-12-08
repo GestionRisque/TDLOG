@@ -2,7 +2,7 @@ __author__ = 'sihanyou'
 # -*- coding: utf-8 -*-
 #
 
-#import unittest
+# import unittest
 import os.path
 import sys
 import csv
@@ -10,10 +10,8 @@ import datetime
 import GlobalValue
 from PyQt4 import QtGui
 from Actif import Actif
-import ImportYahooData,SimpleModelling
+import ImportYahooData, SimpleModelling
 import logging
-
-
 
 
 # class TestStringMethods(unittest.TestCase):
@@ -24,48 +22,53 @@ import logging
 ########## MAIN DIALOG FORM: Main UI ##############
 
 class MainDialog(QtGui.QWidget):
-
     def __init__(self):
         super(MainDialog, self).__init__()
-
         self.initUI()
 
     def initUI(self):
+        self.portfolioText = QtGui.QLabel("Please choose Portfolio Data File Path:", self)
+        self.portfolioText.setFont(QtGui.QFont('Times', 20))
 
-        self.text = QtGui.QLabel("Please choose Portfolio Data File Path:",self)
-        self.text.setFont(QtGui.QFont('Times',20))
-        self.text.move(100,60)
-        self.text2 = QtGui.QLabel("Pre-processing data...",self)
-        self.text2.resize(500,30)
-        self.text2.setVisible(False)
-        self.le = QtGui.QLineEdit(self)
-        self.le.move(100, 102)
-        self.le.resize(500,22)
+        self.processText = QtGui.QLabel("Pre-processing data...", self)
+        self.processText.setEnabled(False)
 
-        self.btn = QtGui.QPushButton('Import Portfolio Data', self)
-        self.btn.move(680, 100)
-        self.btn.clicked.connect(self.selectFile)
+        self.pathEdit = QtGui.QLineEdit(self)
+        self.importBtn = QtGui.QPushButton('Import Portfolio Data', self)
+        self.importBtn.clicked.connect(self.selectFile)
 
-        self.btn3 = QtGui.QCheckBox('No Internet',self)
-        self.btn3.move(680, 200)
-        self.btn3.setVisible(False)
+        self.noInternetBtn = QtGui.QCheckBox('No Internet', self)
+        self.noInternetBtn.setEnabled(False)
 
-        self.btn2 = QtGui.QPushButton('Begin Pre-processing', self)
-        self.btn2.setVisible(False)
-        self.btn2.move(680, 160)
-        self.btn2.clicked.connect(self.preProc)
+        self.beginProBtn = QtGui.QPushButton('Begin Pre-processing', self)
+        self.beginProBtn.setEnabled(False)
+        self.beginProBtn.clicked.connect(self.preProc)
 
-        self.prg = QtGui.QProgressBar(self)
-        self.prg.setVisible(False)
+        self.progBar = QtGui.QProgressBar(self)
+        self.progBar.setEnabled(False)
 
-        self.setGeometry(300, 100, 1000, 500)
+        vbox = QtGui.QVBoxLayout();
+        hbox1 = QtGui.QHBoxLayout();
+        hbox2 = QtGui.QHBoxLayout();
+        vbox.addWidget(self.portfolioText)
+        hbox1.addWidget(self.pathEdit)
+        hbox1.addWidget(self.importBtn)
+        vbox.addLayout(hbox1)
+        vbox.addWidget(self.processText)
+        hbox2.addWidget(self.progBar)
+        hbox2.addWidget(self.beginProBtn)
+        vbox.addLayout(hbox2)
+        vbox.addWidget(self.noInternetBtn)
+        self.setLayout(vbox)
+
+        self.setGeometry(300, 100, 500, 300)
         self.setWindowTitle('Portfolio Risk Management Tool')
         self.show()
 
     def preProc(self):
-        self.prg.setValue(3)
+        self.progBar.setValue(3)
 
-        if self.btn3.isChecked():
+        if self.noInternetBtn.isChecked():
             preProcessing(True)
         else:
             preProcessing(False)
@@ -74,40 +77,56 @@ class MainDialog(QtGui.QWidget):
 
     def selectFile(self):
         self.filename = QtGui.QFileDialog.getOpenFileName()
-        self.le.setText(self.filename)
-        self.prg.setVisible(True)
-        self.text2.setVisible(True)
-        self.btn3.setVisible(True)
-        self.text2.setFont(QtGui.QFont('Times',20))
-        self.text2.move(100,160)
-        self.prg.move(100,200)
-        self.prg.resize(500,30)
-        self.prg.setValue(0)
-        readFile(self.filename)
-        self.btn2.setVisible(True)
+
+        ok=readFile(self.filename)
+        if ok:
+            self.pathEdit.setText(self.filename)
+            self.enableProcessBlock(True)
+        else:
+            QtGui.QMessageBox.warning(self,"Error","File format is invalid!")
+
+    def enableProcessBlock(self,enable):
+        self.progBar.setEnabled(enable)
+        self.processText.setEnabled(enable)
+        self.noInternetBtn.setEnabled(enable)
+        self.processText.setFont(QtGui.QFont('Times', 20))
+        self.progBar.setValue(0)
+        self.beginProBtn.setEnabled(True)
 
 
 ########## FROM HERE WE BEGIN TO IMPORT DATA ##############
 
 ########## If online, we read only Portfolio Structure ##############
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
 
 def readFile(filename):
-    # stock all actifs infomations in portfolio.
+    ''' stock all actifs infomations in portfolio.'''
     try:
         with open(filename, 'r') as csvfile:
             GlobalValue.ptf = []
             pf = csv.reader(csvfile)
             for row in pf:
-                GlobalValue.ptf.append(Actif(row))
+                if len(row) != 2 or not is_number(row[1]):
+                    raise Exception("invalid file format!")
+                stockCode=row[0]
+                quantity=row[1]
+                GlobalValue.ptf.append(Actif(stockCode,quantity))
 
             csvfile.close()
-            logging.debug('{}           File imported successfully!'.format(datetime.datetime.now()))
-
-            #print(GlobalValue.ptf[0].nom)
-
+            logging.debug('{}\tFile imported successfully!'.format(datetime.datetime.now()))
+        # print(GlobalValue.ptf[0].stockCode)
+        return True;
     except FileNotFoundError:
-        logging.debug('{}           Please choose the file or close the program!'.format(datetime.datetime.now()))
+        logging.debug('{}\tPlease choose the file or close the program!'.format(datetime.datetime.now()))
         sys.exit(app.exec_())
+    except Exception as e:
+        print(e)
+        return False
 
 
 ######## If offline, we have to read the historical data values stocked with the name 'Historical Data.csv' ##########
@@ -123,24 +142,24 @@ def readHistData(filename):
             for actif in GlobalValue.ptf:
                 i = 0
                 for column in pf[0]:
-                    if column==actif.nom:
+                    if column == actif.nom:
                         for row in pf:
                             try:
                                 temp.append(float(row[i]))
                             except ValueError:
                                 print(row[i])
                         break
-                    i=i+1
+                    i = i + 1
 
                 GlobalValue.yahooData.append(temp)
                 temp = []
             csvfile.close()
-            logging.debug('{}           Historical Data File imported successfully!'.format(datetime.datetime.now()))
+            logging.debug('{}\tHistorical Data File imported successfully!'.format(datetime.datetime.now()))
 
-            #print(GlobalValue.ptf[0].nom)
+            # print(GlobalValue.ptf[0].nom)
 
     except FileNotFoundError:
-        logging.debug('{}           Please choose the file or close the program!'.format(datetime.datetime.now()))
+        logging.debug('{}\tPlease choose the file or close the program!'.format(datetime.datetime.now()))
         sys.exit(app.exec_())
 
 
@@ -149,34 +168,29 @@ def readHistData(filename):
 ########## Pre-Processing will prepare the data we need ##############
 
 def preProcessing(TF):
-
     if TF:
-        logging.debug('{}           Picking data from local resource...'.format(datetime.datetime.now()))
+        logging.debug('{}\tPicking data from local resource...'.format(datetime.datetime.now()))
         readHistData('Historical Data.csv')
 
     else:
-        logging.debug('{}           Picking data from Yahoo Finance...'.format(datetime.datetime.now()))
+        logging.debug('{}\tPicking data from Yahoo Finance...'.format(datetime.datetime.now()))
 
-        if ImportYahooData.main() == 0:
-            logging.debug('{}           A serieuse warning as above: please check your file!'.format(datetime.datetime.now()))
+        if ImportYahooData.importData() == False:
+            logging.debug('{}\tA serieuse warning as above: please check your file!'.format(datetime.datetime.now()))
         else:
-            logging.debug('{}           data imported successfully from Yahoo!'.format(datetime.datetime.now()))
+            logging.debug('{}\tdata imported successfully from Yahoo!'.format(datetime.datetime.now()))
+
 
 def simpleModelling():
-
-    logging.debug('{}           Preparing for the simple modelling...'.format(datetime.datetime.now()))
+    logging.debug('{}\tPreparing for the simple modelling...'.format(datetime.datetime.now()))
 
     try:
         SimpleModelling.main()
     except ValueError:
-        logging.debug('{}           Calculation is wrong somewhere...'.format(datetime.datetime.now()))
+        logging.debug('{}\tCalculation is wrong somewhere...'.format(datetime.datetime.now()))
         return
-    logging.debug('{}           Modelling is successful!'.format(datetime.datetime.now()))
+    logging.debug('{}\tModelling is successful!'.format(datetime.datetime.now()))
     print(GlobalValue.modelParams)
-
-
-
-
 
 
 if __name__ == '__main__':
@@ -188,10 +202,10 @@ if __name__ == '__main__':
         os.remove('iterate.dat')
 
     while os.path.isfile(LOG_FILENAME):
-        LOG_FILENAME = 'debug'+ '(' +str(lognum)+ ').log'
+        LOG_FILENAME = 'debug' + '(' + str(lognum) + ').log'
         lognum += 1
 
-    logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
+    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG)
 
     logging.debug('******************   Log File  ***********************')
 
