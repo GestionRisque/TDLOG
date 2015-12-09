@@ -142,7 +142,7 @@ def readHistData(filename):
             for actif in GlobalValue.ptf:
                 i = 0
                 for column in pf[0]:
-                    if column == actif.nom:
+                    if column == actif.stockCode:
                         for row in pf:
                             try:
                                 temp.append(float(row[i]))
