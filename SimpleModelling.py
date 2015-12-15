@@ -13,13 +13,14 @@ def main():
     GlobalValue.init()
     GlobalValue.modelParams = []
     for actif in GlobalValue.yahooData:
-        #print(actif)
         arma = ARMA(actif)
         garch = GARCH(actif)
         sv = SV(actif)
         GlobalValue.modelParams.append({'arma':arma,'garch':garch,'sv':sv})
-        #print(priceMvt)
 
+# From here are the functions to calculate different models
+
+##  From here the function is used for all models
 
 def returns(share):
 
@@ -29,6 +30,7 @@ def returns(share):
         r.append(math.log(share[i]/share[i-1]))
     return r
 
+##  From here the functions are used for SV models
 
 def vctPower(v,p):
     res = []
@@ -107,6 +109,8 @@ def SV_opt(share,i):
     return params.x
 
 
+# From here we calibrate the models
+
 
 def SV(share):
 
@@ -134,9 +138,6 @@ def GARCH(share):
 
     return res.params
 
-
-
-    return
 
 if __name__ == '__main__':
     main()
