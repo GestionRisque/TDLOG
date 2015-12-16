@@ -8,7 +8,8 @@ import sys
 import csv
 import datetime
 import GlobalValue
-from PyQt4 import QtGui
+from PyQt4 import QtGui,QtCore
+from PyQt4.Qt import pyqtSignal
 from Actif import Actif
 import ImportYahooData, SimpleModelling
 import logging
@@ -18,13 +19,52 @@ import logging
 #     def unitTest(self):
 #         self.assertEqual(GlobalValue.ptf[0].nom, 'AAPL')
 
+class Worker(QtCore.QObject):
+    precessPercent=pyqtSignal(int)
+    def __init__(self):
+        super().__init__()
+    def preProcess(self, isOnlineMode):
+        self.preProcessing(isOnlineMode)
+        self.simpleModelling()
+
+    def preProcessing(self,TF):
+        if TF:
+            logging.debug('{}\tPicking data from local resource...'.format(datetime.datetime.now()))
+            readHistData('Historical Data.csv')
+
+        else:
+            logging.debug('{}\tPicking data from Yahoo Finance...'.format(datetime.datetime.now()))
+
+            if ImportYahooData.importData() == False:
+                logging.debug('{}\tA serieuse warning as above: please check your file!'.format(datetime.datetime.now()))
+            else:
+                logging.debug('{}\tdata imported successfully from Yahoo!'.format(datetime.datetime.now()))
+
+
+    def simpleModelling(self):
+        logging.debug('{}\tPreparing for the simple modelling...'.format(datetime.datetime.now()))
+
+        try:
+            SimpleModelling.main()
+        except ValueError:
+            logging.debug('{}\tCalculation is wrong somewhere...'.format(datetime.datetime.now()))
+            return
+        logging.debug('{}\tModelling is successful!'.format(datetime.datetime.now()))
+        print(GlobalValue.modelParams)
+
+
 
 ########## MAIN DIALOG FORM: Main UI ##############
 
 class MainDialog(QtGui.QWidget):
-    def __init__(self):
+    preProcessRequest=pyqtSignal(bool)
+
+    def __init__(self,worker):
         super(MainDialog, self).__init__()
         self.initUI()
+        self.worker=worker
+        self.preProcessRequest.connect(self.worker.preProcess)
+
 
     def initUI(self):
         self.portfolioText = QtGui.QLabel("Please choose Portfolio Data File Path:", self)
@@ -67,13 +107,8 @@ class MainDialog(QtGui.QWidget):
 
     def preProc(self):
         self.progBar.setValue(3)
-
-        if self.noInternetBtn.isChecked():
-            preProcessing(True)
-        else:
-            preProcessing(False)
-
-        simpleModelling()
+        noInternet=self.noInternetBtn.isChecked()
+        self.preProcessRequest.emit(not noInternet)
 
     def selectFile(self):
         self.filename = QtGui.QFileDialog.getOpenFileName()
@@ -90,8 +125,11 @@ class MainDialog(QtGui.QWidget):
         self.processText.setEnabled(enable)
         self.noInternetBtn.setEnabled(enable)
         self.processText.setFont(QtGui.QFont('Times', 20))
-        self.progBar.setValue(0)
+        self.progressBarValueChange(0)
         self.beginProBtn.setEnabled(True)
+
+    def progressBarValueChange(self, value):
+        self.progBar.setValue(value)
 
 
 ########## FROM HERE WE BEGIN TO IMPORT DATA ##############
@@ -112,7 +150,7 @@ def readFile(filename):
             pf = csv.reader(csvfile)
             for row in pf:
                 if len(row) != 2 or not is_number(row[1]):
-                    raise Exception("invalid file format!")
+                    return False;
                 stockCode=row[0]
                 quantity=row[1]
                 GlobalValue.ptf.append(Actif(stockCode,quantity))
@@ -124,9 +162,6 @@ def readFile(filename):
     except FileNotFoundError:
         logging.debug('{}\tPlease choose the file or close the program!'.format(datetime.datetime.now()))
         sys.exit(app.exec_())
-    except Exception as e:
-        print(e)
-        return False
 
 
 ######## If offline, we have to read the historical data values stocked with the name 'Historical Data.csv' ##########
@@ -142,7 +177,7 @@ def readHistData(filename):
             for actif in GlobalValue.ptf:
                 i = 0
                 for column in pf[0]:
-                    if column == actif.nom:
+                    if column == actif.stockCode:
                         for row in pf:
                             try:
                                 temp.append(float(row[i]))
@@ -167,30 +202,7 @@ def readHistData(filename):
 
 ########## Pre-Processing will prepare the data we need ##############
 
-def preProcessing(TF):
-    if TF:
-        logging.debug('{}\tPicking data from local resource...'.format(datetime.datetime.now()))
-        readHistData('Historical Data.csv')
 
-    else:
-        logging.debug('{}\tPicking data from Yahoo Finance...'.format(datetime.datetime.now()))
-
-        if ImportYahooData.importData() == False:
-            logging.debug('{}\tA serieuse warning as above: please check your file!'.format(datetime.datetime.now()))
-        else:
-            logging.debug('{}\tdata imported successfully from Yahoo!'.format(datetime.datetime.now()))
-
-
-def simpleModelling():
-    logging.debug('{}\tPreparing for the simple modelling...'.format(datetime.datetime.now()))
-
-    try:
-        SimpleModelling.main()
-    except ValueError:
-        logging.debug('{}\tCalculation is wrong somewhere...'.format(datetime.datetime.now()))
-        return
-    logging.debug('{}\tModelling is successful!'.format(datetime.datetime.now()))
-    print(GlobalValue.modelParams)
 
 
 if __name__ == '__main__':
@@ -211,7 +223,9 @@ if __name__ == '__main__':
 
     GlobalValue.init()
     app = QtGui.QApplication(sys.argv)
-
-    md = MainDialog()
+    worker=Worker()
+    workerThread=QtCore.QThread()
+    worker.moveToThread(workerThread)
+    md = MainDialog(worker)
 
     sys.exit(app.exec_())
