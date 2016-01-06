@@ -24,7 +24,7 @@ def debugOutput(message):
 
 
 class Worker(QtCore.QObject):
-    precessPercent = pyqtSignal(int)
+    processPercent = pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
@@ -32,7 +32,10 @@ class Worker(QtCore.QObject):
     def preProcess(self, isOffLine):
         print("preProcess")
         self.preProcessing(isOffLine)
-        self.simpleModelling()
+        currentPercent=10
+        self.processPercent.emit(currentPercent)
+        self.simpleModelling(currentPercent)
+        self.processPercent.emit(100)
 
     def preProcessing(self, noInternet):
         if noInternet:
@@ -45,11 +48,11 @@ class Worker(QtCore.QObject):
             else:
                 debugOutput('data imported successfully from Yahoo!')
 
-    def simpleModelling(self):
+    def simpleModelling(self,currentPercent):
         debugOutput("Preparing for the simple modelling..")
 
         try:
-            SimpleModelling.main()
+            SimpleModelling.main(self.processPercent, currentPercent)
         except ValueError:
             debugOutput("Calculation is wrong somewhere")
             return
@@ -69,6 +72,7 @@ class MainDialog(QtGui.QWidget):
     def setWorker(self, worker):
         self.worker = worker
         self.preProcessRequest.connect(self.worker.preProcess)
+        worker.processPercent.connect(self.progressBarValueChange)
 
     def initUI(self):
         self.portfolioText = QtGui.QLabel("Please choose Portfolio Data File Path:", self)
