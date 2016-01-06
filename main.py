@@ -227,5 +227,6 @@ if __name__ == '__main__':
     workerThread=QtCore.QThread()
     worker.moveToThread(workerThread)
     md = MainDialog(worker)
+    workerThread.start()
 
     sys.exit(app.exec_())
