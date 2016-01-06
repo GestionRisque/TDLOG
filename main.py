@@ -8,7 +8,7 @@ import sys
 import csv
 import datetime
 import GlobalValue
-from PyQt4 import QtGui,QtCore
+from PyQt4 import QtGui, QtCore
 from PyQt4.Qt import pyqtSignal
 from Actif import Actif
 import ImportYahooData, SimpleModelling
@@ -18,53 +18,57 @@ import logging
 # class TestStringMethods(unittest.TestCase):
 #     def unitTest(self):
 #         self.assertEqual(GlobalValue.ptf[0].nom, 'AAPL')
+def debugOutput(message):
+    print("log: " + message)
+    logging.debug(('{}\t' + message).format(datetime.datetime.now()))
+
 
 class Worker(QtCore.QObject):
-    precessPercent=pyqtSignal(int)
+    precessPercent = pyqtSignal(int)
+
     def __init__(self):
         super().__init__()
-    def preProcess(self, isOnlineMode):
-        self.preProcessing(isOnlineMode)
+
+    def preProcess(self, isOffLine):
+        print("preProcess")
+        self.preProcessing(isOffLine)
         self.simpleModelling()
 
-    def preProcessing(self,TF):
-        if TF:
-            logging.debug('{}\tPicking data from local resource...'.format(datetime.datetime.now()))
+    def preProcessing(self, noInternet):
+        if noInternet:
+            debugOutput('Picking data from local resource...')
             readHistData('Historical Data.csv')
-
         else:
-            logging.debug('{}\tPicking data from Yahoo Finance...'.format(datetime.datetime.now()))
-
+            debugOutput('Picking data from Yahoo Finance...')
             if ImportYahooData.importData() == False:
-                logging.debug('{}\tA serieuse warning as above: please check your file!'.format(datetime.datetime.now()))
+                debugOutput('A serieuse warning as above: please check your file!')
             else:
-                logging.debug('{}\tdata imported successfully from Yahoo!'.format(datetime.datetime.now()))
-
+                debugOutput('data imported successfully from Yahoo!')
 
     def simpleModelling(self):
-        logging.debug('{}\tPreparing for the simple modelling...'.format(datetime.datetime.now()))
+        debugOutput("Preparing for the simple modelling..")
 
         try:
             SimpleModelling.main()
         except ValueError:
-            logging.debug('{}\tCalculation is wrong somewhere...'.format(datetime.datetime.now()))
+            debugOutput("Calculation is wrong somewhere")
             return
-        logging.debug('{}\tModelling is successful!'.format(datetime.datetime.now()))
+        debugOutput("Modelling is successful!")
         print(GlobalValue.modelParams)
-
 
 
 ########## MAIN DIALOG FORM: Main UI ##############
 
 class MainDialog(QtGui.QWidget):
-    preProcessRequest=pyqtSignal(bool)
+    preProcessRequest = pyqtSignal(bool)
 
-    def __init__(self,worker):
+    def __init__(self):
         super(MainDialog, self).__init__()
         self.initUI()
-        self.worker=worker
-        self.preProcessRequest.connect(self.worker.preProcess)
 
+    def setWorker(self, worker):
+        self.worker = worker
+        self.preProcessRequest.connect(self.worker.preProcess)
 
     def initUI(self):
         self.portfolioText = QtGui.QLabel("Please choose Portfolio Data File Path:", self)
@@ -107,20 +111,20 @@ class MainDialog(QtGui.QWidget):
 
     def preProc(self):
         self.progBar.setValue(3)
-        noInternet=self.noInternetBtn.isChecked()
-        self.preProcessRequest.emit(not noInternet)
+        noInternet = self.noInternetBtn.isChecked()
+        self.preProcessRequest.emit(noInternet)
 
     def selectFile(self):
         self.filename = QtGui.QFileDialog.getOpenFileName()
 
-        ok=readFile(self.filename)
+        ok = readFile(self.filename)
         if ok:
             self.pathEdit.setText(self.filename)
             self.enableProcessBlock(True)
         else:
-            QtGui.QMessageBox.warning(self,"Error","File format is invalid!")
+            QtGui.QMessageBox.warning(self, "Error", "File format is invalid!")
 
-    def enableProcessBlock(self,enable):
+    def enableProcessBlock(self, enable):
         self.progBar.setEnabled(enable)
         self.processText.setEnabled(enable)
         self.noInternetBtn.setEnabled(enable)
@@ -142,6 +146,7 @@ def is_number(s):
     except ValueError:
         return False
 
+
 def readFile(filename):
     ''' stock all actifs infomations in portfolio.'''
     try:
@@ -151,16 +156,16 @@ def readFile(filename):
             for row in pf:
                 if len(row) != 2 or not is_number(row[1]):
                     return False;
-                stockCode=row[0]
-                quantity=row[1]
-                GlobalValue.ptf.append(Actif(stockCode,quantity))
+                stockCode = row[0]
+                quantity = row[1]
+                GlobalValue.ptf.append(Actif(stockCode, quantity))
 
             csvfile.close()
-            logging.debug('{}\tFile imported successfully!'.format(datetime.datetime.now()))
+            debugOutput("File imported successfully!")
         # print(GlobalValue.ptf[0].stockCode)
         return True;
     except FileNotFoundError:
-        logging.debug('{}\tPlease choose the file or close the program!'.format(datetime.datetime.now()))
+        debugOutput("Please choose the file or close the program!")
         sys.exit(app.exec_())
 
 
@@ -189,12 +194,12 @@ def readHistData(filename):
                 GlobalValue.yahooData.append(temp)
                 temp = []
             csvfile.close()
-            logging.debug('{}\tHistorical Data File imported successfully!'.format(datetime.datetime.now()))
+            debugOutput("Historical Data File imported successfully!")
 
             # print(GlobalValue.ptf[0].nom)
 
     except FileNotFoundError:
-        logging.debug('{}\tPlease choose the file or close the program!'.format(datetime.datetime.now()))
+        debugOutput("Please choose the file or close the program!")
         sys.exit(app.exec_())
 
 
@@ -223,9 +228,11 @@ if __name__ == '__main__':
 
     GlobalValue.init()
     app = QtGui.QApplication(sys.argv)
-    worker=Worker()
-    workerThread=QtCore.QThread()
+    worker = Worker()
+    workerThread = QtCore.QThread()
     worker.moveToThread(workerThread)
-    md = MainDialog(worker)
+    md = MainDialog()
+    md.setWorker(worker)
+    workerThread.start()
 
     sys.exit(app.exec_())
