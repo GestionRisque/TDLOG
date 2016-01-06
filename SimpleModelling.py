@@ -9,13 +9,19 @@ import math
 from scipy import stats as st
 from scipy.optimize import minimize
 
-def main():
+def main(processPercentSignal,currentPercent):
     GlobalValue.init()
     GlobalValue.modelParams = []
+    n = len(GlobalValue.yahooData)
+    stepPercent=(90-currentPercent)//n
     for actif in GlobalValue.yahooData:
         arma = ARMA(actif)
         garch = GARCH(actif)
+        currentPercent += stepPercent/2
+        processPercentSignal.emit(currentPercent)
         sv = SV(actif)
+        currentPercent += stepPercent/2
+        processPercentSignal.emit(currentPercent)
         GlobalValue.modelParams.append({'arma':arma,'garch':garch,'sv':sv})
 
 # From here are the functions to calculate different models

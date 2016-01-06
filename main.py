@@ -24,20 +24,27 @@ def debugOutput(message):
 
 
 class Worker(QtCore.QObject):
-    precessPercent = pyqtSignal(int)
+    processPercent = pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
 
-    def preProcess(self, isOffLine):
+    def preProcess(self, isOffLine, isDebugMode):
         print("preProcess")
-        self.preProcessing(isOffLine)
-        self.simpleModelling()
+        self.preProcessing(isOffLine, isDebugMode)
+        currentPercent=10
+        self.processPercent.emit(currentPercent)
+        self.simpleModelling(currentPercent)
+        self.processPercent.emit(100)
 
-    def preProcessing(self, noInternet):
+    def preProcessing(self, noInternet, debugMode):
         if noInternet:
             debugOutput('Picking data from local resource...')
-            readHistData('Historical Data.csv')
+            if debugMode:
+                readHistData('Historical Data Short.csv')
+            else:
+                readHistData('Historical Data.csv')
+
         else:
             debugOutput('Picking data from Yahoo Finance...')
             if ImportYahooData.importData() == False:
@@ -45,22 +52,22 @@ class Worker(QtCore.QObject):
             else:
                 debugOutput('data imported successfully from Yahoo!')
 
-    def simpleModelling(self):
+    def simpleModelling(self,currentPercent):
         debugOutput("Preparing for the simple modelling..")
 
         try:
-            SimpleModelling.main()
+            SimpleModelling.main(self.processPercent, currentPercent)
         except ValueError:
             debugOutput("Calculation is wrong somewhere")
             return
-        debugOutput("Modelling is successful!")
+        debugOutput("Modeling is successful!")
         print(GlobalValue.modelParams)
 
 
 ########## MAIN DIALOG FORM: Main UI ##############
 
 class MainDialog(QtGui.QWidget):
-    preProcessRequest = pyqtSignal(bool)
+    preProcessRequest = pyqtSignal(bool,bool)
 
     def __init__(self):
         super(MainDialog, self).__init__()
@@ -69,6 +76,7 @@ class MainDialog(QtGui.QWidget):
     def setWorker(self, worker):
         self.worker = worker
         self.preProcessRequest.connect(self.worker.preProcess)
+        worker.processPercent.connect(self.progressBarValueChange)
 
     def initUI(self):
         self.portfolioText = QtGui.QLabel("Please choose Portfolio Data File Path:", self)
@@ -83,6 +91,9 @@ class MainDialog(QtGui.QWidget):
 
         self.noInternetBtn = QtGui.QCheckBox('No Internet', self)
         self.noInternetBtn.setEnabled(False)
+
+        self.debugTestBtn = QtGui.QCheckBox('Debug Mode(fewer data, faster processing)', self)
+        self.debugTestBtn.setEnabled(False)
 
         self.beginProBtn = QtGui.QPushButton('Begin Pre-processing', self)
         self.beginProBtn.setEnabled(False)
@@ -103,6 +114,7 @@ class MainDialog(QtGui.QWidget):
         hbox2.addWidget(self.beginProBtn)
         vbox.addLayout(hbox2)
         vbox.addWidget(self.noInternetBtn)
+        vbox.addWidget(self.debugTestBtn)
         self.setLayout(vbox)
 
         self.setGeometry(300, 100, 500, 300)
@@ -112,7 +124,8 @@ class MainDialog(QtGui.QWidget):
     def preProc(self):
         self.progBar.setValue(3)
         noInternet = self.noInternetBtn.isChecked()
-        self.preProcessRequest.emit(noInternet)
+        debugMode=self.debugTestBtn.isChecked()
+        self.preProcessRequest.emit(noInternet,debugMode)
 
     def selectFile(self):
         self.filename = QtGui.QFileDialog.getOpenFileName()
@@ -128,6 +141,7 @@ class MainDialog(QtGui.QWidget):
         self.progBar.setEnabled(enable)
         self.processText.setEnabled(enable)
         self.noInternetBtn.setEnabled(enable)
+        self.debugTestBtn.setEnabled(enable)
         self.processText.setFont(QtGui.QFont('Times', 20))
         self.progressBarValueChange(0)
         self.beginProBtn.setEnabled(True)
