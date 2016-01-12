@@ -18,7 +18,6 @@ def importData():
             return False
         GlobalValue.yahooData.append(decode(price))
 
-    #print(GlobalValue.yahooData[0])
     return True
 
 
