@@ -8,6 +8,8 @@ import numpy as np
 import math
 from scipy import stats as st
 from scipy.optimize import minimize
+import warnings
+warnings.filterwarnings("ignore")
 
 def main(processPercentSignal,currentPercent):
     GlobalValue.init()
