@@ -13,6 +13,8 @@ from PyQt4.Qt import pyqtSignal
 from Actif import Actif
 import ImportYahooData, SimpleModelling
 import logging
+import plot
+import pickle
 
 
 # class TestStringMethods(unittest.TestCase):
@@ -64,6 +66,7 @@ class Worker(QtCore.QObject):
             return
         debugOutput("Modeling is successful!")
         print(GlobalValue.modelParams)
+
         self.simpleModelSucceed.emit(True)
 
 
@@ -162,15 +165,17 @@ class MainDialog(QtGui.QWidget):
             QtGui.QMessageBox.warning(self, "Error", "Please select one model!")
         else:
             pass
-            #TODO
-
+            # TODO
 
     def simpleModellingFinishReceiver(self, succeed):
         if succeed:
             self.enableSimulationBlock(True)
+            pickle.dump(GlobalValue.modelParams, open("globalValue_modelParams.dat", "wb"))
+            pickle.dump(GlobalValue.yahooData, open("globalValue_yahooData.dat", "wb"))
         else:
             self.enableSimulationBlock(False)
             QtGui.QMessageBox.warning(self, "Error", "Simple Modelling failed!")
+        plot.Plot_ARMA(GlobalValue.modelParams[0]['arma'], GlobalValue.yahooData[0])
 
     def enableProcessBlock(self, enable):
         self.progBar.setEnabled(enable)
