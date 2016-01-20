@@ -72,11 +72,12 @@ def Plot_SV(param, Share):
             simu_returns.append(math.exp(h[i] / 2) * numpy.random.normal(0, 1))
         global_returns.append(sum(simu_returns))
 
-    real_returns = sum(returns)
+    real_returns = sum(returns[254:])
+
 
     plt.figure(3)
     plt.boxplot(global_returns)
-    plt.plot([real_returns] * 500)
+    plt.plot([real_returns]*500)
     plt.title("boxplot_SV")
     plt.ylabel("returns")
     plt.show()
@@ -133,9 +134,9 @@ if __name__ == '__main__':
     main.readFile('Portfolio structure.csv')
     main.readHistData('Historical Data.csv')
     #用pickle读取之前算好的param和yahooData (500天数据)
-    modelp = pickle.load(open("globalValue_modelParams.data", "rb"))
-    yahoodata = pickle.load(open("globalValue_yahooData.data", "rb"))
-    
+    modelp = pickle.load(open("globalValue_modelParams.dat", "rb"))
+    yahoodata = pickle.load(open("globalValue_yahooData.dat", "rb"))
+    print(yahoodata[0])
     #Plot_ARMA(modelp[0]['arma'], yahoodata[0])
     #Plot_GARCH(modelp[0]['garch'], yahoodata[0])
     Plot_SV(modelp[0]['sv'], yahoodata[0])
