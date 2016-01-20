@@ -59,10 +59,10 @@ def pseudoData(theta, u, e):
 
     h = []
     y = []
-    h.append(e[0] * s ** 2 / (1 - b ** 2) + a / (1 - b))
+    h.append(e[0] * s / math.sqrt(1 - b ** 2) + a / (1 - b))
     y.append(math.exp(h[0] / 2) * u[0])
     for i in range(1, len(e) - 1):
-        h.append(a + b * h[i - 1] + e[i])
+        h.append(a + b * h[i - 1] + s * e[i])
         y.append(math.exp(h[i] / 2) * u[i])
     return y
 

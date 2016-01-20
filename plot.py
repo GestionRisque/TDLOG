@@ -1,5 +1,6 @@
 __author__ = 'dhy'
-
+import matplotlib
+matplotlib.use('Qt4Agg')
 import matplotlib.pyplot as plt
 import numpy
 import math
@@ -63,12 +64,12 @@ def Plot_SV(param, Share):
     global_returns = []
     N = len(returns)
     for j in range(1000):
-        h = [numpy.random.normal(param[0] / (1 - param[1]), param[2] ** (2) / (1 - param[1] ** (2)))]
-        simu_returns = [math.exp(h[0]) / 2 * numpy.random.normal(0, 1)]
+        h = [numpy.random.normal(param[0] / (1 - param[1]), param[2] / math.sqrt(1 - param[1] ** (2)))]
+        simu_returns = [math.exp(h[0] / 2) * numpy.random.normal(0, 1)]
 
         for i in range(1, N):
             h.append(param[0] + param[1] * h[i - 1] + param[2] * numpy.random.normal(0, 1))
-            simu_returns.append(math.exp(h[i]) / 2 * numpy.random.normal(0, 1))
+            simu_returns.append(math.exp(h[i] / 2) * numpy.random.normal(0, 1))
         global_returns.append(sum(simu_returns))
 
     real_returns = sum(returns)
@@ -85,8 +86,8 @@ def chose_SV(param):
     global_returns = []
 
     for j in range(1000):
-        h = [numpy.random.normal(param[0] / (1 - param[1]), param[2] ** (2) / (1 - param[1] ** (2)))]
-        simu_returns = [math.exp(h[0]) / 2 * numpy.random.normal(0, 1)]
+        h = [numpy.random.normal(param[0] / (1 - param[1]), param[2] / math.sqrt(1 - param[1] ** (2)))]
+        simu_returns = [math.exp(h[0] / 2) * numpy.random.normal(0, 1)]
 
         for i in range(1, 250):
             h.append(param[0] + param[1] * h[i - 1] + param[2] * numpy.random.normal(0, 1))
