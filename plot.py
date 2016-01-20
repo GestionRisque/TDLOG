@@ -94,7 +94,7 @@ def chose_GARCH(param):
         sigma=[param[4]]
         epsilon=[param[4*numpy.random.normal(0,1)]]
         simu_r=[param[0]+epsilon[0]]
-        for i in range(1, 250):
+        for i in range(1,250):
             sigma.append(param[1]+param[2]*(epsilon[i-1])**(2)+param[3]*(sigma[i-1])**(2))
             epsilon.append(sigma[i]*numpy.random.normal(0,1))
             simu_r.append(param[0]+epsilon[i])
