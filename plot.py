@@ -67,16 +67,17 @@ def Plot_SV(param, Share):
         h = [numpy.random.normal(param[0] / (1 - param[1]), param[2] / math.sqrt(1 - param[1] ** (2)))]
         simu_returns = [math.exp(h[0] / 2) * numpy.random.normal(0, 1)]
 
-        for i in range(1, N):
+        for i in range(1, 250):
             h.append(param[0] + param[1] * h[i - 1] + param[2] * numpy.random.normal(0, 1))
             simu_returns.append(math.exp(h[i] / 2) * numpy.random.normal(0, 1))
         global_returns.append(sum(simu_returns))
 
-    real_returns = sum(returns)
+    real_returns = sum(returns[(len(returns)-251):])
+
 
     plt.figure(3)
     plt.boxplot(global_returns)
-    plt.plot([real_returns] * 500)
+    plt.plot([real_returns]*500)
     plt.title("boxplot_SV")
     plt.ylabel("returns")
     plt.show()
@@ -134,9 +135,9 @@ if __name__ == '__main__':
     main.readHistData('Historical Data.csv')
     #用pickle读取之前算好的param和yahooData (500天数据)
     modelp = pickle.load(open("globalValue_modelParams.dat", "rb"))
-    #yahoodata = pickle.load(open("globalValue_yahooData.dat", "rb"))
-
-    Plot_ARMA(modelp[0]['arma'], GlobalValue.yahooData[0])
+    yahoodata = pickle.load(open("globalValue_yahooData.dat", "rb"))
+    print(yahoodata[0])
+    #Plot_ARMA(modelp[0]['arma'], yahoodata[0])
     #Plot_GARCH(modelp[0]['garch'], yahoodata[0])
     #Plot_SV(modelp[0]['sv'], GlobalValue.yahooData[0])
     #returns = pickle.load(open("global_returns.dat", "rb"))
