@@ -118,7 +118,8 @@ def chose_ARMA(Params,returns):    ##### 3 lastest days' returns
 
 
 
-
+if __name__ == '__main__':
+    chose_ARMA()
 
 
 
