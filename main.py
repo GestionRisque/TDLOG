@@ -169,7 +169,7 @@ def readFile(filename):
             pf = csv.reader(csvfile)
             for row in pf:
                 if len(row) != 2 or not is_number(row[1]):
-                    return False;
+                    return False
                 stockCode = row[0]
                 quantity = row[1]
                 GlobalValue.ptf.append(Actif(stockCode, quantity))
@@ -177,7 +177,7 @@ def readFile(filename):
             csvfile.close()
             debugOutput("File imported successfully!")
         # print(GlobalValue.ptf[0].stockCode)
-        return True;
+        return True
     except FileNotFoundError:
         debugOutput("Please choose the file or close the program!")
         sys.exit(app.exec_())
