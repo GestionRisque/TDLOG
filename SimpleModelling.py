@@ -8,6 +8,8 @@ import numpy as np
 import math
 from scipy import stats as st
 from scipy.optimize import minimize
+import warnings
+warnings.filterwarnings("ignore")
 
 def main(processPercentSignal,currentPercent):
     GlobalValue.init()
@@ -132,7 +134,7 @@ def ARMA(share):
     r = returns(share)
     arma_mod30 = sm.tsa.ARMA(r, (3,0))
     res = arma_mod30.fit()
-    return res.params
+    return res.params+res.sigma2
 
 
 def GARCH(share):
@@ -142,7 +144,7 @@ def GARCH(share):
     res = am.fit(update_freq=5)
     print(res.summary())
 
-    return res.params
+    return res.params+res.param_cov
 
 
 if __name__ == '__main__':

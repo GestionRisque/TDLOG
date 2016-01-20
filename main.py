@@ -250,3 +250,5 @@ if __name__ == '__main__':
     workerThread.start()
 
     sys.exit(app.exec_())
+
+
