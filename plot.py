@@ -31,14 +31,15 @@ def Plot_GARCH(param,returns):
 
     N=len(returns)
     global_returns=[]
+
     for j in range(1000):
 
         sigma=[param[4]]
-        epsilon=[param[4*numpy.random.normal(0,1)]
+        epsilon=[param[4*numpy.random.normal(0,1)]]
         simu_r=[param[0]+epsilon[0]]
         for i in range(1,N):
             sigma.append(param[1]+param[2]*(epsilon[i-1])**(2)+param[3]*(sigma[i-1])**(2))
-            epsilon.append(sigma[i]*numpy.random.normal(0,1)
+            epsilon.append(sigma[i]*numpy.random.normal(0,1))
             simu_r.append(param[0]+epsilon[i])
 
         global_returns.append(sum(simu_r))
@@ -49,7 +50,7 @@ def Plot_GARCH(param,returns):
     plt.plot([real_returns]*500)
     plt.title("boxplot_GARCH")
     plt.ylabel("returns")
-    plt.show())
+    plt.show()
 
 def Plot_SV(param,returns):
     global_returns=[]
@@ -70,10 +71,10 @@ def Plot_SV(param,returns):
     plt.plot([real_returns]*500)
     plt.title("boxplot_SV")
     plt.ylabel("returns")
-    plt.show())
+    plt.show()
 
 
-def chose_SV(params):
+def chose_SV(param):
     global_returns=[]
 
     for j in range(1000):
@@ -87,27 +88,27 @@ def chose_SV(params):
 
     return global_returns
 
-def chose_GARCH(params):
+def chose_GARCH(param):
     global_returns=[]
     for j in range(1000):
         sigma=[param[4]]
-        epsilon=[param[4*numpy.random.normal(0,1)]
+        epsilon=[param[4*numpy.random.normal(0,1)]]
         simu_r=[param[0]+epsilon[0]]
-        for i in range(1,N):
+        for i in range(1, 250):
             sigma.append(param[1]+param[2]*(epsilon[i-1])**(2)+param[3]*(sigma[i-1])**(2))
-            epsilon.append(sigma[i]*numpy.random.normal(0,1)
+            epsilon.append(sigma[i]*numpy.random.normal(0,1))
             simu_r.append(param[0]+epsilon[i])
 
         global_returns.append(sum(simu_r))
 
     return global_returns
 
-def chose_ARMA(param,returns):    ##### 3 lastest days' returns
+def chose_ARMA(Params,returns):    ##### 3 lastest days' returns
     returns_global=[]
     n=3
     simu_returns=returns
     for j in range(1000):
-        for i in range(n,250+n):
+        for i in range(n ,250+n):
             simu_returns.append(Params[1]*simu_returns[i-1]+Params[2]*simu_returns[i-2]+Params[3]*simu_returns[i-3]+numpy.random.normal(0,Params[4]))
 
         returns_global.append(sum(simu_returns))

@@ -134,7 +134,8 @@ def ARMA(share):
     r = returns(share)
     arma_mod30 = sm.tsa.ARMA(r, (3,0))
     res = arma_mod30.fit()
-    return res.params+res.sigma2
+    sigma=res.sigma2
+    return res.params.append(sigma)
 
 
 def GARCH(share):
@@ -143,8 +144,7 @@ def GARCH(share):
     am = arch.arch_model(r)
     res = am.fit(update_freq=5)
     print(res.summary())
-
-    return res.params+res.param_cov
+    return res.params
 
 
 if __name__ == '__main__':
