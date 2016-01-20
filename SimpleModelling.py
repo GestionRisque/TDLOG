@@ -147,7 +147,7 @@ def GARCH(share):
     am = arch.arch_model(r)
     res = am.fit(update_freq=5)
     var = res.conditional_volatility[len(r)-251]
-    print(res.summary())
+    #print(res.summary())
 
     params = res.params.tolist()
     params.append(var)
