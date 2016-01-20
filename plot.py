@@ -8,12 +8,12 @@ import math
 def Plot_ARMA(Params,Share):
 
     N=len(Share)
-    share=[Params[0]]*N
     n=4
     returns_global=[]
-    for i in range(n-1):
-        share[i]=Share[i]
     for j in range(1000):
+        share=[Params[0]]*N
+        for i in range(n-1):
+            share[i]=Share[i]
         for i in range(n-1,N):
             share[i]=Params[1]*share[i-1]+Params[2]*share[i-2]+Params[3]*share[i-3]+numpy.random.normal(0,Params[4])
 
