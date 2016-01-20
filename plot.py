@@ -1,5 +1,6 @@
 __author__ = 'dhy'
-
+import matplotlib
+matplotlib.use('Qt4Agg')
 import matplotlib.pyplot as plt
 import numpy
 import math
