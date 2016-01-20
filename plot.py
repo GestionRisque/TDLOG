@@ -35,7 +35,7 @@ def Plot_GARCH(param,returns):
     for j in range(1000):
 
         sigma=[param[4]]
-        epsilon=[param[4*numpy.random.normal(0,1)]]
+        epsilon=[param[4]*numpy.random.normal(0,1)]
         simu_r=[param[0]+epsilon[0]]
         for i in range(1,N):
             sigma.append(param[1]+param[2]*(epsilon[i-1])**(2)+param[3]*(sigma[i-1])**(2))
