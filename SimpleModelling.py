@@ -126,7 +126,7 @@ def SV(share):
     for i in range (1,20):
         params.append(SV_opt(share,i))
 
-    return np.mean(params,axis=0)
+    return np.mean(params,axis=0).tolist()
 
 
 def ARMA(share):
@@ -134,7 +134,10 @@ def ARMA(share):
     r = returns(share)
     arma_mod30 = sm.tsa.ARMA(r, (3,0))
     res = arma_mod30.fit()
-    return res.params+res.sigma2
+    sigma=res.sigma2.tolist()
+    params = res.params.tolist()
+    params.append(sigma)
+    return params
 
 
 def GARCH(share):
@@ -142,9 +145,11 @@ def GARCH(share):
     r = returns(share)
     am = arch.arch_model(r)
     res = am.fit(update_freq=5)
+    var = res.conditional_volatility[len(r)-251]
     print(res.summary())
-
-    return res.params+res.param_cov
+    params = res.params.tolist()
+    params.append(var)
+    return params
 
 
 if __name__ == '__main__':
