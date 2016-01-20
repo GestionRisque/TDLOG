@@ -67,12 +67,12 @@ def Plot_SV(param, Share):
         h = [numpy.random.normal(param[0] / (1 - param[1]), param[2] / math.sqrt(1 - param[1] ** (2)))]
         simu_returns = [math.exp(h[0] / 2) * numpy.random.normal(0, 1)]
 
-        for i in range(1, N):
+        for i in range(1, 250):
             h.append(param[0] + param[1] * h[i - 1] + param[2] * numpy.random.normal(0, 1))
             simu_returns.append(math.exp(h[i] / 2) * numpy.random.normal(0, 1))
         global_returns.append(sum(simu_returns))
 
-    real_returns = sum(returns[254:])
+    real_returns = sum(returns[(len(returns)-251):])
 
 
     plt.figure(3)
