@@ -134,6 +134,7 @@ if __name__ == '__main__':
     #用pickle读取之前算好的param和yahooData (500天数据)
     modelp = pickle.load(open("globalValue_modelParams.data", "rb"))
     yahoodata = pickle.load(open("globalValue_yahooData.data", "rb"))
+    
     #Plot_ARMA(modelp[0]['arma'], yahoodata[0])
     #Plot_GARCH(modelp[0]['garch'], yahoodata[0])
     Plot_SV(modelp[0]['sv'], yahoodata[0])
