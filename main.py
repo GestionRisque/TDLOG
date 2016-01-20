@@ -25,6 +25,7 @@ def debugOutput(message):
 
 class Worker(QtCore.QObject):
     processPercent = pyqtSignal(int)
+    simpleModelSucceed = pyqtSignal(bool)
 
     def __init__(self):
         super().__init__()
@@ -32,7 +33,7 @@ class Worker(QtCore.QObject):
     def preProcess(self, isOffLine, isDebugMode):
         print("preProcess")
         self.preProcessing(isOffLine, isDebugMode)
-        currentPercent=10
+        currentPercent = 10
         self.processPercent.emit(currentPercent)
         self.simpleModelling(currentPercent)
         self.processPercent.emit(100)
@@ -52,22 +53,24 @@ class Worker(QtCore.QObject):
             else:
                 debugOutput('data imported successfully from Yahoo!')
 
-    def simpleModelling(self,currentPercent):
+    def simpleModelling(self, currentPercent):
         debugOutput("Preparing for the simple modelling..")
 
         try:
             SimpleModelling.main(self.processPercent, currentPercent)
         except ValueError:
             debugOutput("Calculation is wrong somewhere")
+            self.simpleModelSucceed.emit(False)
             return
         debugOutput("Modeling is successful!")
         print(GlobalValue.modelParams)
+        self.simpleModelSucceed.emit(True)
 
 
 ########## MAIN DIALOG FORM: Main UI ##############
 
 class MainDialog(QtGui.QWidget):
-    preProcessRequest = pyqtSignal(bool,bool)
+    preProcessRequest = pyqtSignal(bool, bool)
 
     def __init__(self):
         super(MainDialog, self).__init__()
@@ -77,6 +80,7 @@ class MainDialog(QtGui.QWidget):
         self.worker = worker
         self.preProcessRequest.connect(self.worker.preProcess)
         worker.processPercent.connect(self.progressBarValueChange)
+        worker.simpleModelSucceed.connect(self.simpleModellingFinishReceiver)
 
     def initUI(self):
         self.portfolioText = QtGui.QLabel("Please choose Portfolio Data File Path:", self)
@@ -96,36 +100,52 @@ class MainDialog(QtGui.QWidget):
         self.debugTestBtn.setEnabled(False)
 
         self.beginProBtn = QtGui.QPushButton('Begin Pre-processing', self)
-        self.beginProBtn.setEnabled(False)
         self.beginProBtn.clicked.connect(self.preProc)
 
         self.progBar = QtGui.QProgressBar(self)
-        self.progBar.setEnabled(False)
 
-        vbox = QtGui.QVBoxLayout();
-        hbox1 = QtGui.QHBoxLayout();
-        hbox2 = QtGui.QHBoxLayout();
-        vbox.addWidget(self.portfolioText)
+        self.armaCheck = QtGui.QRadioButton('ARMA', self)
+        self.garchCheck = QtGui.QRadioButton('GARCH', self)
+        self.svCheck = QtGui.QRadioButton('SV', self)
+        self.userChoiceGroupBox = QtGui.QGroupBox('Please select one model you want:', self)
+        radioVBox = QtGui.QVBoxLayout()
+        radioVBox.addWidget(self.armaCheck)
+        radioVBox.addWidget(self.garchCheck)
+        radioVBox.addWidget(self.svCheck)
+        self.userChoiceGroupBox.setLayout(radioVBox)
+
+        self.beginSimulationBtn = QtGui.QPushButton('Begin simulation', self)
+        self.beginSimulationBtn.clicked.connect(self.beginSimulation)
+
+        mainVBox = QtGui.QVBoxLayout()
+        hbox1 = QtGui.QHBoxLayout()
+        hbox2 = QtGui.QHBoxLayout()
+        mainVBox.addWidget(self.portfolioText)
         hbox1.addWidget(self.pathEdit)
         hbox1.addWidget(self.importBtn)
-        vbox.addLayout(hbox1)
-        vbox.addWidget(self.processText)
+        mainVBox.addLayout(hbox1)
+        mainVBox.addWidget(self.processText)
         hbox2.addWidget(self.progBar)
         hbox2.addWidget(self.beginProBtn)
-        vbox.addLayout(hbox2)
-        vbox.addWidget(self.noInternetBtn)
-        vbox.addWidget(self.debugTestBtn)
-        self.setLayout(vbox)
+        mainVBox.addLayout(hbox2)
+        mainVBox.addWidget(self.noInternetBtn)
+        mainVBox.addWidget(self.debugTestBtn)
+        mainVBox.addWidget(self.userChoiceGroupBox)
+        mainVBox.addWidget(self.beginSimulationBtn)
+        self.setLayout(mainVBox)
 
         self.setGeometry(300, 100, 500, 300)
         self.setWindowTitle('Portfolio Risk Management Tool')
         self.show()
 
+        self.enableProcessBlock(False)
+        self.enableSimulationBlock(False)
+
     def preProc(self):
         self.progBar.setValue(3)
         noInternet = self.noInternetBtn.isChecked()
-        debugMode=self.debugTestBtn.isChecked()
-        self.preProcessRequest.emit(noInternet,debugMode)
+        debugMode = self.debugTestBtn.isChecked()
+        self.preProcessRequest.emit(noInternet, debugMode)
 
     def selectFile(self):
         self.filename = QtGui.QFileDialog.getOpenFileName()
@@ -137,6 +157,21 @@ class MainDialog(QtGui.QWidget):
         else:
             QtGui.QMessageBox.warning(self, "Error", "File format is invalid!")
 
+    def beginSimulation(self):
+        if not self.armaCheck.isChecked() and not self.garchCheck.isChecked() and not self.svCheck.isChecked():
+            QtGui.QMessageBox.warning(self, "Error", "Please select one model!")
+        else:
+            pass
+            #TODO
+
+
+    def simpleModellingFinishReceiver(self, succeed):
+        if succeed:
+            self.enableSimulationBlock(True)
+        else:
+            self.enableSimulationBlock(False)
+            QtGui.QMessageBox.warning(self, "Error", "Simple Modelling failed!")
+
     def enableProcessBlock(self, enable):
         self.progBar.setEnabled(enable)
         self.processText.setEnabled(enable)
@@ -145,6 +180,10 @@ class MainDialog(QtGui.QWidget):
         self.processText.setFont(QtGui.QFont('Times', 20))
         self.progressBarValueChange(0)
         self.beginProBtn.setEnabled(True)
+
+    def enableSimulationBlock(self, enable):
+        self.userChoiceGroupBox.setEnabled(enable)
+        self.beginSimulationBtn.setEnabled(enable)
 
     def progressBarValueChange(self, value):
         self.progBar.setValue(value)
@@ -169,7 +208,7 @@ def readFile(filename):
             pf = csv.reader(csvfile)
             for row in pf:
                 if len(row) != 2 or not is_number(row[1]):
-                    return False;
+                    return False
                 stockCode = row[0]
                 quantity = row[1]
                 GlobalValue.ptf.append(Actif(stockCode, quantity))
@@ -177,7 +216,7 @@ def readFile(filename):
             csvfile.close()
             debugOutput("File imported successfully!")
         # print(GlobalValue.ptf[0].stockCode)
-        return True;
+        return True
     except FileNotFoundError:
         debugOutput("Please choose the file or close the program!")
         sys.exit(app.exec_())
@@ -250,5 +289,3 @@ if __name__ == '__main__':
     workerThread.start()
 
     sys.exit(app.exec_())
-
-
