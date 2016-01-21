@@ -6,7 +6,7 @@ import numpy
 import math
 import pickle
 import SimpleModelling
-
+import GlobalValue
 
 ########   Plot_ARMA take the parameters of ARMA model ...
 # and calculate the fitted value then compare with historical data######
@@ -115,21 +115,21 @@ def plot_simulation(params,hist):
     plt.boxplot([sim_arma])
     plt.plot([real_global_returns] * len(hist))
     plt.title("boxplot_ARMA")
-    plt.ylabel("returns")
+
 
 
     plt.subplot(1,3,2)
     plt.boxplot([sim_garch])
     plt.plot([real_global_returns] * len(hist))
     plt.title("boxplot_GARCH")
-    plt.ylabel("returns")
+
 
 
     plt.subplot(1,3,3)
     plt.boxplot(sim_sv)
     plt.plot([real_global_returns]*500)
     plt.title("boxplot_SV")
-    plt.ylabel("returns")
+
     plt.show()
 
 
@@ -143,6 +143,8 @@ if __name__ == '__main__':
     #用pickle读取之前算好的param和yahooData (500天数据)
     modelp = pickle.load(open("globalValue_modelParams.dat", "rb"))
     yahoodata = pickle.load(open("globalValue_yahooData.dat", "rb"))
-    print(modelp[0])
+    #print(modelp[0])
     plot_simulation(modelp[0],yahoodata[0])
+    plot_simulation(modelp[1],yahoodata[1])
+    plot_simulation(modelp[2],yahoodata[2])
     #returns = pickle.load(open("global_returns.dat", "rb"))
