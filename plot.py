@@ -20,7 +20,7 @@ def Plot_ARMA(Params,Share):
         for i in range(n-1):
             share[i]=Share[i]
         for i in range(n-1,N):
-            share[i]=Params[1]*share[i-1]+Params[2]*share[i-2]+Params[3]*share[i-3]+numpy.random.normal(0,Params[4])
+            share[i]=Params[1]*(share[i-1]-Params[0])+Params[2]*(share[i-2]-Params[0])+Params[3]*(share[i-3]-Params[0])+numpy.random.normal(0,math.sqrt(Params[4]))
 
         returns_global.append(sum(share))
     print(returns_global)
@@ -40,12 +40,12 @@ def Plot_GARCH(param, Share):
 
     for j in range(1000):
 
-        sigma=[param[4]]
+        sigma=[math.sqrt(param[4])]
         epsilon=[param[4]*numpy.random.normal(0,1)]
         simu_r=[param[0]+epsilon[0]]
         for i in range(1,N):
             sigma.append(param[1]+param[2]*(epsilon[i-1])**(2)+param[3]*(sigma[i-1])**(2))
-            epsilon.append(sigma[i]*numpy.random.normal(0,1))
+            epsilon.append(math.sqrt(sigma[i])*numpy.random.normal(0,1))
             simu_r.append(param[0]+epsilon[i])
 
         global_returns.append(sum(simu_r))
@@ -136,8 +136,8 @@ if __name__ == '__main__':
     #用pickle读取之前算好的param和yahooData (500天数据)
     modelp = pickle.load(open("globalValue_modelParams.dat", "rb"))
     yahoodata = pickle.load(open("globalValue_yahooData.dat", "rb"))
-    print(yahoodata[0])
+    print(modelp[0])
     #Plot_ARMA(modelp[0]['arma'], yahoodata[0])
-    #Plot_GARCH(modelp[0]['garch'], yahoodata[0])
-    Plot_SV(modelp[0]['sv'], yahoodata[0])
+    Plot_GARCH(modelp[0]['garch'], yahoodata[0])
+    #Plot_SV(modelp[0]['sv'], yahoodata[0])
     #returns = pickle.load(open("global_returns.dat", "rb"))
