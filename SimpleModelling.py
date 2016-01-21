@@ -118,7 +118,7 @@ def SV_opt(share, i):
 
     nus = mu(r)
 
-    bnds = ((-10, 0), (-1, 0.999), (0.001, 10))
+    bnds = ((-10, 0), (-0.999, 0.999), (0.001, 10))
 
     params = minimize(target, (-5, 0.3, 0.5), bounds=bnds, method='SLSQP')
 

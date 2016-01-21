@@ -175,7 +175,7 @@ class MainDialog(QtGui.QWidget):
         else:
             self.enableSimulationBlock(False)
             QtGui.QMessageBox.warning(self, "Error", "Simple Modelling failed!")
-        plot.Plot_ARMA(GlobalValue.modelParams[0]['arma'], GlobalValue.yahooData[0])
+        plot.plot_simulation(GlobalValue.modelParams[0], GlobalValue.yahooData[0])
 
     def enableProcessBlock(self, enable):
         self.progBar.setEnabled(enable)
