@@ -46,6 +46,8 @@ def returns(share):
 
 ##  From here the functions are used for SV models
 
+# we calculate log(y^2) for a vector
+# if y = 0 , we can't get a true log
 def vctPower(v, p):
     res = []
     for i in range(0, len(v) - 1):
@@ -73,6 +75,7 @@ def pseudoData(theta, u, e):
 def distance(mu, nu):
     return (mu[0] - nu[0]) ** 2 + (mu[1] - nu[1]) ** 2 + (mu[2] - nu[2]) ** 2
 
+# we define the norm of data as parameters mu, the distance is the difference between the norm of real data and pseudo data
 
 def mu(r):
     ts = vctPower(r, 2)
@@ -90,6 +93,7 @@ def mu(r):
 
     return nu
 
+# the distance to minimize.
 
 def target(theta):
     p = pseudoData(theta, u, e)
@@ -98,13 +102,13 @@ def target(theta):
 
     return distance(mus, nus)
 
+# By changing the parameters, we simulate the pseudo-data, we minimise the difference between simulated pseudo-data
+# using parameters model and real data to calculate the best estimation of parameters.
 
-def SV_opt(share, i):
+def SV_opt(share):
     r = returns(share)
 
     length = len(r)
-
-    random.seed(i)
 
     global u
 
@@ -129,11 +133,9 @@ def SV_opt(share, i):
 
 
 def SV(share):
-    params = []
-    for i in range(1, 20):
-        params.append(SV_opt(share, i))
+    params = SV_opt(share)
 
-    return np.mean(params, axis=0).tolist()
+    return params.tolist()
 
 
 def ARMA(share):

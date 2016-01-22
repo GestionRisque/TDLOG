@@ -71,7 +71,7 @@ def chose_SV(param):
 
         for i in range(1, 250):
             h.append(param[0] + param[1] * h[i - 1] + param[2] * numpy.random.normal(0, 1))
-            simu_returns.append(math.exp(h[i]) / 2 * numpy.random.normal(0, 1))
+            simu_returns.append(math.exp(h[i]/2) * numpy.random.normal(0, 1))
         global_returns.append(sum(simu_returns))
 
     return global_returns
