@@ -107,6 +107,8 @@ class MainDialog(QtGui.QWidget):
 
         self.progBar = QtGui.QProgressBar(self)
 
+        self.plotChoice = QtGui.QPushButton('Boxplots of simulations',self)
+
         self.armaCheck = QtGui.QRadioButton('ARMA', self)
         self.garchCheck = QtGui.QRadioButton('GARCH', self)
         self.svCheck = QtGui.QRadioButton('SV', self)
@@ -133,6 +135,7 @@ class MainDialog(QtGui.QWidget):
         mainVBox.addLayout(hbox2)
         mainVBox.addWidget(self.noInternetBtn)
         mainVBox.addWidget(self.debugTestBtn)
+        mainVBox.addWidget(self.plotChoice)
         mainVBox.addWidget(self.userChoiceGroupBox)
         mainVBox.addWidget(self.beginSimulationBtn)
         self.setLayout(mainVBox)
@@ -175,7 +178,13 @@ class MainDialog(QtGui.QWidget):
         else:
             self.enableSimulationBlock(False)
             QtGui.QMessageBox.warning(self, "Error", "Simple Modelling failed!")
-        plot.Plot_ARMA(GlobalValue.modelParams[0]['arma'], GlobalValue.yahooData[0])
+        for i in range(3):
+            plot.plot_simulation(GlobalValue.modelParams[i], GlobalValue.yahooData[i])
+
+
+
+
+
 
     def enableProcessBlock(self, enable):
         self.progBar.setEnabled(enable)
@@ -187,6 +196,7 @@ class MainDialog(QtGui.QWidget):
         self.beginProBtn.setEnabled(True)
 
     def enableSimulationBlock(self, enable):
+        self.plotChoice.setEnabled(enable)
         self.userChoiceGroupBox.setEnabled(enable)
         self.beginSimulationBtn.setEnabled(enable)
 
