@@ -10,3 +10,5 @@ def init():
     global yahooData
 
     global modelParams
+
+    global simulations

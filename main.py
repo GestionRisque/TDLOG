@@ -178,8 +178,8 @@ class MainDialog(QtGui.QWidget):
         else:
             self.enableSimulationBlock(False)
             QtGui.QMessageBox.warning(self, "Error", "Simple Modelling failed!")
-        for i in range(3):
-            plot.plot_simulation(GlobalValue.modelParams[i], GlobalValue.yahooData[i])
+
+        plot.plot_simulation(GlobalValue.modelParams[0], GlobalValue.yahooData[0])
 
 
 
