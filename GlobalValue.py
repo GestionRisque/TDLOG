@@ -5,13 +5,13 @@ __author__ = 'sihanyou'
 
 def init():
     global ptf
-
     global yahooData
-
     global modelParams
-
     global modelChoice
+    global simulations
+
     ptf = []
     yahooData = []
     modelParams = []
     modelChoice = []
+
