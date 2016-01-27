@@ -7,7 +7,6 @@ import logging
 
 
 def importData():
-    GlobalValue.init()
     GlobalValue.yahooData = []
     today = datetime.date.today()
     for actif in GlobalValue.ptf:

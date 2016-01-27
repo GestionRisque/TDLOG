@@ -71,6 +71,41 @@ class Worker(QtCore.QObject):
 
 
 ########## MAIN DIALOG FORM: Main UI ##############
+class ModelChoiceDialog(QtGui.QDialog):
+    def __init__(self, portfolio, parent):
+        super(ModelChoiceDialog, self).__init__(parent)
+        self.actifCount = len(portfolio)
+        self.armaCheck = list()
+        self.garchCheck = list()
+        self.svCheck = list()
+        self.vBox = QtGui.QVBoxLayout()
+
+        for i in range(self.actifCount):
+            self.armaCheck.append(QtGui.QRadioButton('ARMA', self))
+            self.garchCheck.append(QtGui.QRadioButton('GARCH', self))
+            self.svCheck.append(QtGui.QRadioButton('SV', self))
+            userChoiceGroupBox = QtGui.QGroupBox('Please select one model for adtif ' + portfolio[i].stockCode, self)
+            radioVBox = QtGui.QVBoxLayout()
+            radioVBox.addWidget(self.armaCheck[i])
+            radioVBox.addWidget(self.garchCheck[i])
+            radioVBox.addWidget(self.svCheck[i])
+            userChoiceGroupBox.setLayout(radioVBox)
+            self.vBox.addWidget(userChoiceGroupBox)
+        self.setLayout(self.vBox)
+
+    def getResult(self):
+        result = list()
+        for i in range(self.actifCount):
+            if self.armaCheck[i].isChecked():
+                result.append(0)
+            elif self.garchCheck[i].isChecked():
+                result.append(1)
+            elif self.svCheck[i].isChecked():
+                result.append(2)
+            else:
+                result.append(-1)
+        return result
+
 
 class MainDialog(QtGui.QWidget):
     preProcessRequest = pyqtSignal(bool, bool)
@@ -107,15 +142,17 @@ class MainDialog(QtGui.QWidget):
 
         self.progBar = QtGui.QProgressBar(self)
 
-        self.armaCheck = QtGui.QRadioButton('ARMA', self)
-        self.garchCheck = QtGui.QRadioButton('GARCH', self)
-        self.svCheck = QtGui.QRadioButton('SV', self)
-        self.userChoiceGroupBox = QtGui.QGroupBox('Please select one model you want:', self)
-        radioVBox = QtGui.QVBoxLayout()
-        radioVBox.addWidget(self.armaCheck)
-        radioVBox.addWidget(self.garchCheck)
-        radioVBox.addWidget(self.svCheck)
-        self.userChoiceGroupBox.setLayout(radioVBox)
+        self.plotChoice = QtGui.QPushButton('Boxplots of simulations', self)
+
+        self.modelChoiceBtn = QtGui.QPushButton('Choose Models for actif', self)
+        self.modelChoiceBtn.clicked.connect(self.chooseModel)
+
+        self.modelInfoLabel = QtGui.QLabel(self)
+        self.updateModelLabel()
+        self.modelGroupeBox = QtGui.QGroupBox('Chosen Model:', self)
+        modelLayout = QtGui.QVBoxLayout()
+        modelLayout.addWidget(self.modelInfoLabel)
+        self.modelGroupeBox.setLayout(modelLayout)
 
         self.beginSimulationBtn = QtGui.QPushButton('Begin simulation', self)
         self.beginSimulationBtn.clicked.connect(self.beginSimulation)
@@ -133,7 +170,9 @@ class MainDialog(QtGui.QWidget):
         mainVBox.addLayout(hbox2)
         mainVBox.addWidget(self.noInternetBtn)
         mainVBox.addWidget(self.debugTestBtn)
-        mainVBox.addWidget(self.userChoiceGroupBox)
+        mainVBox.addWidget(self.modelChoiceBtn)
+        mainVBox.addWidget(self.modelGroupeBox)
+        mainVBox.addWidget(self.plotChoice)
         mainVBox.addWidget(self.beginSimulationBtn)
         self.setLayout(mainVBox)
 
@@ -143,6 +182,29 @@ class MainDialog(QtGui.QWidget):
 
         self.enableProcessBlock(False)
         self.enableSimulationBlock(False)
+
+    def updateModelLabel(self):
+        s = ''
+        if len(GlobalValue.ptf) == 0:
+            s = 'No actif found.'
+        elif len(GlobalValue.modelChoice) == 0:
+            for i in range(len(GlobalValue.ptf)):
+                actifName = GlobalValue.ptf[i].stockCode
+                s = s + actifName + ': no model chosen\n'
+        else:
+            assert len(GlobalValue.modelChoice) == len(GlobalValue.ptf)
+            for i in range(len(GlobalValue.ptf)):
+                actifName = GlobalValue.ptf[i].stockCode
+                s = s + actifName + ': '
+                if GlobalValue.modelChoice[i] == 0:
+                    s = s + 'arma\n'
+                elif GlobalValue.modelChoice[i] == 1:
+                    s = s + 'garch\n'
+                elif GlobalValue.modelChoice[i] == 2:
+                    s = s + 'sv\n'
+                else:
+                    s = s + 'no model chosen\n'
+        self.modelInfoLabel.setText(s)
 
     def preProc(self):
         self.progBar.setValue(3)
@@ -160,12 +222,16 @@ class MainDialog(QtGui.QWidget):
         else:
             QtGui.QMessageBox.warning(self, "Error", "File format is invalid!")
 
+    def chooseModel(self):
+        modelDialog = ModelChoiceDialog(GlobalValue.ptf, self)
+        modelDialog.setGeometry(300, 100, 500, 300)
+        modelDialog.setWindowTitle('Choose model')
+        modelDialog.exec_()
+        GlobalValue.modelChoice = modelDialog.getResult()
+        self.updateModelLabel()
+
     def beginSimulation(self):
-        if not self.armaCheck.isChecked() and not self.garchCheck.isChecked() and not self.svCheck.isChecked():
-            QtGui.QMessageBox.warning(self, "Error", "Please select one model!")
-        else:
-            pass
-            # TODO
+        self.applyModel()
 
     def simpleModellingFinishReceiver(self, succeed):
         if succeed:
@@ -175,7 +241,8 @@ class MainDialog(QtGui.QWidget):
         else:
             self.enableSimulationBlock(False)
             QtGui.QMessageBox.warning(self, "Error", "Simple Modelling failed!")
-        #plot.Plot_ARMA(GlobalValue.modelParams[0]['arma'], GlobalValue.yahooData[0])
+        for i in range(3):
+            plot.plot_simulation(GlobalValue.modelParams[i], GlobalValue.yahooData[i])
 
     def enableProcessBlock(self, enable):
         self.progBar.setEnabled(enable)
@@ -187,11 +254,30 @@ class MainDialog(QtGui.QWidget):
         self.beginProBtn.setEnabled(True)
 
     def enableSimulationBlock(self, enable):
-        self.userChoiceGroupBox.setEnabled(enable)
+        self.plotChoice.setEnabled(enable)
         self.beginSimulationBtn.setEnabled(enable)
 
     def progressBarValueChange(self, value):
         self.progBar.setValue(value)
+
+    def applyModel(self):
+        # TODO: change assert to if to give a warning dialog
+        assert len(GlobalValue.ptf) == len(GlobalValue.modelParams)
+        assert len(GlobalValue.ptf) == len(GlobalValue.modelChoice)
+        assert len(GlobalValue.ptf) == len(GlobalValue.yahooData)
+        assert len(GlobalValue.ptf) > 0
+        for i in range(len(GlobalValue.ptf)):
+            assert GlobalValue.modelChoice[i] >= 0
+            assert GlobalValue.modelChoice[i] <= 2
+        for i in range(len(GlobalValue.ptf)):
+            if GlobalValue.modelChoice[i] == 0:
+                plot.chose_ARMA(GlobalValue.modelParams[i], GlobalValue.yahooData[i])
+            elif GlobalValue.modelChoice[i] == 1:
+                plot.chose_GARCH(GlobalValue.modelParams[i])
+            elif GlobalValue.modelChoice[i] == 2:
+                plot.chose_SV(GlobalValue.modelParams[i], GlobalValue.yahooData[i])
+            else:
+                assert False
 
 
 ########## FROM HERE WE BEGIN TO IMPORT DATA ##############
