@@ -15,7 +15,7 @@ import ImportYahooData, SimpleModelling
 import logging
 import plot
 import pickle
-
+import Aggregation
 
 # class TestStringMethods(unittest.TestCase):
 #     def unitTest(self):
@@ -84,7 +84,7 @@ class ModelChoiceDialog(QtGui.QDialog):
             self.armaCheck.append(QtGui.QRadioButton('ARMA', self))
             self.garchCheck.append(QtGui.QRadioButton('GARCH', self))
             self.svCheck.append(QtGui.QRadioButton('SV', self))
-            userChoiceGroupBox = QtGui.QGroupBox('Please select one model for adtif ' + portfolio[i].stockCode, self)
+            userChoiceGroupBox = QtGui.QGroupBox('Please select one model for the stock ' + portfolio[i].stockCode, self)
             radioVBox = QtGui.QVBoxLayout()
             radioVBox.addWidget(self.armaCheck[i])
             radioVBox.addWidget(self.garchCheck[i])
@@ -142,9 +142,7 @@ class MainDialog(QtGui.QWidget):
 
         self.progBar = QtGui.QProgressBar(self)
 
-        self.plotChoice = QtGui.QPushButton('Boxplots of simulations', self)
-
-        self.modelChoiceBtn = QtGui.QPushButton('Choose Models for actif', self)
+        self.modelChoiceBtn = QtGui.QPushButton('Choose Models for stocks', self)
         self.modelChoiceBtn.clicked.connect(self.chooseModel)
 
         self.modelInfoLabel = QtGui.QLabel(self)
@@ -172,7 +170,6 @@ class MainDialog(QtGui.QWidget):
         mainVBox.addWidget(self.debugTestBtn)
         mainVBox.addWidget(self.modelChoiceBtn)
         mainVBox.addWidget(self.modelGroupeBox)
-        mainVBox.addWidget(self.plotChoice)
         mainVBox.addWidget(self.beginSimulationBtn)
         self.setLayout(mainVBox)
 
@@ -186,7 +183,7 @@ class MainDialog(QtGui.QWidget):
     def updateModelLabel(self):
         s = ''
         if len(GlobalValue.ptf) == 0:
-            s = 'No actif found.'
+            s = 'No stock name found.'
         elif len(GlobalValue.modelChoice) == 0:
             for i in range(len(GlobalValue.ptf)):
                 actifName = GlobalValue.ptf[i].stockCode
@@ -232,6 +229,7 @@ class MainDialog(QtGui.QWidget):
 
     def beginSimulation(self):
         self.applyModel()
+        Aggregation.agregation()
 
     def simpleModellingFinishReceiver(self, succeed):
         if succeed:
@@ -241,8 +239,8 @@ class MainDialog(QtGui.QWidget):
         else:
             self.enableSimulationBlock(False)
             QtGui.QMessageBox.warning(self, "Error", "Simple Modelling failed!")
-        for i in range(3):
-            plot.plot_simulation(GlobalValue.modelParams[i], GlobalValue.yahooData[i])
+        for i in range(len(GlobalValue.yahooData)):
+            plot.plot_simulation(GlobalValue.modelParams[i], GlobalValue.yahooData[i],i)
 
     def enableProcessBlock(self, enable):
         self.progBar.setEnabled(enable)
@@ -254,7 +252,6 @@ class MainDialog(QtGui.QWidget):
         self.beginProBtn.setEnabled(True)
 
     def enableSimulationBlock(self, enable):
-        self.plotChoice.setEnabled(enable)
         self.beginSimulationBtn.setEnabled(enable)
 
     def progressBarValueChange(self, value):
@@ -269,15 +266,20 @@ class MainDialog(QtGui.QWidget):
         for i in range(len(GlobalValue.ptf)):
             assert GlobalValue.modelChoice[i] >= 0
             assert GlobalValue.modelChoice[i] <= 2
+
+        GlobalValue.simulations = []
         for i in range(len(GlobalValue.ptf)):
             if GlobalValue.modelChoice[i] == 0:
-                plot.chose_ARMA(GlobalValue.modelParams[i], GlobalValue.yahooData[i])
+                returns = SimpleModelling.returns(GlobalValue.yahooData[i])
+                GlobalValue.simulations.append(plot.choice_ARMA(GlobalValue.modelParams[i]['arma'], returns))
             elif GlobalValue.modelChoice[i] == 1:
-                plot.chose_GARCH(GlobalValue.modelParams[i])
+                GlobalValue.simulations.append(plot.Plot_GARCH(GlobalValue.modelParams[i]['garch']))
             elif GlobalValue.modelChoice[i] == 2:
-                plot.chose_SV(GlobalValue.modelParams[i], GlobalValue.yahooData[i])
+                GlobalValue.simulations.append(plot.Plot_SV(GlobalValue.modelParams[i]['sv']))
             else:
                 assert False
+
+        print(GlobalValue.simulations[0])
 
 
 ########## FROM HERE WE BEGIN TO IMPORT DATA ##############

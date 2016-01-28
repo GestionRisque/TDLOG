@@ -8,26 +8,56 @@ import csv
 import scipy.stats as st
 import math
 from scipy.interpolate import griddata
+import GlobalValue
 
-sims = []
-sims.append(np.random.normal(0,1,1000))
-sims.append(np.random.normal(0,1,1000))
-sims.append(np.random.normal(0,1,1000))
 
-with open('/Users/sihanyou/GitHub/TDLOG/Historical Data.csv', 'r') as csvfile:
-    pf = csv.reader(csvfile)
-    pf = list(pf)
+def price(r,init):
+    prix = []
+    n = len(r)
+    for i in range(0, n):
+        prix.append(math.exp(r[i])*init)
+    return prix
 
-hisData = list(map(list, zip(*pf[1:])))
-histData = []
-numItem = len(hisData)
-for item in hisData:
-    histData.append([float(i) for i in item])
+def agregation():
+    histData = GlobalValue.yahooData
+    rankmatrix = generateRanking(histData)
+    sims = []
+    i = 0
+    actual_value = 0
+    for actif in histData:
+        print(GlobalValue.ptf[i].quantity)
+        sims.append(price(GlobalValue.simulations[i],actif[len(actif)-1]*GlobalValue.ptf[i].quantity))
+        actual_value = actual_value + actif[len(actif)-1]*GlobalValue.ptf[i].quantity
+        i = i + 1
 
-histData = np.array(histData)
+    ordering = reorder(sims)
+    ordered = reordered(rankmatrix,ordering)
 
-from copulalib.copulalib import Copula
-plt.style.use('ggplot')
+    agre = np.sum(ordered,0)
+
+    pnl = agre - actual_value
+
+    estimated_value = np.mean(agre)
+
+    estimated_pnl = np.mean(pnl)
+
+    VaR = - np.percentile(pnl, 1)
+
+    loss = []
+    for item in agre:
+        if item<actual_value:
+            loss.append(actual_value - item)
+    loss = np.array(loss)
+    expected_shortfall = np.mean(loss[np.where(loss > VaR)])
+
+    print(actual_value,estimated_pnl, VaR, estimated_pnl, expected_shortfall)
+
+    textstring = '$Initial=%.0f$\n$Expected P&L=%.0f$\n$VaR_{99}=%.0f$\n$Expected Value=%.0f$\n$Expected Shortfall=%.0f$'%(actual_value,estimated_pnl, VaR, estimated_value, expected_shortfall)
+    fig = plt.figure(figsize=(20,10))
+    plt.hist(agre,bins = 100)
+    plt.title('Distribution of portfolio value in 1 year')
+    fig.text(0.13, 0.7,textstring)
+    plt.show()
 
 
 
@@ -46,12 +76,6 @@ def plotData(x,y):
     plt.title('Y variable distribution')
     plt.show()
 
-def plotProcess():
-
-    for i in range(0,numItem-1):
-        for j in range(i+1,numItem):
-            plotData(histData[i],histData[j])
-
 
 def generateRanking(matrix):
 
@@ -67,8 +91,8 @@ def generateRanking(matrix):
         rankings.append([int(i) for i in item])
     print(rankings)
 
-    plotData(rankings[0],rankings[1])
-    plotData(matrix[0],matrix[1])
+    # plotData(rankings[0],rankings[1])
+    # plotData(matrix[0],matrix[1])
     # clayton = Copula(histData,family='clayton')
     # rank2 = clayton.generate_uv(1000)
     # print(rank2)
@@ -85,7 +109,7 @@ def reordered(rank,order):
     j = 0
     for item in order:
         ranked.append(item[rank[j]])
-        j+=1
+        j=j+1
 
     return ranked
 #-------------------------------------------------------------------------------
@@ -100,14 +124,5 @@ def reordered(rank,order):
 # plotProcess()
 
 if __name__ == '__main__':
-
-    plt.hist(histData[0]*500+histData[1]*100+histData[2]*300,bins =100)
-    rankmatrix = generateRanking(histData)
-    ordering = reorder(sims)
-    ordered = reordered(rankmatrix,ordering)
-    print(ordered)
-    plotData(ordered[0],ordered[1])
-    plotData(np.random.normal(0,1,1000),np.random.normal(0,1,1000))
-    plt.hist(histData[0]+histData[1]+histData[2])
-
+    agregation()
 # generateRanking()
